@@ -1,0 +1,9 @@
+apiVersion: v2
+name: brigade-metrics
+description: |
+  A Helm chart for Brigade Prometheus
+type: application
+version: 0.1.0
+appVersion: v0.1.0
+sources:
+- https://github.com/willie-yao/brigade-metrics

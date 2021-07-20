@@ -1,0 +1,49 @@
+{{- if .Values.grafana.ingress.enabled }}
+{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion }}
+apiVersion: networking.k8s.io/v1
+{{- else }}
+apiVersion: networking.k8s.io/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: {{ include "brigade-metrics.grafana.fullname" . }}
+  labels:
+    {{- include "brigade-metrics.labels" . | nindent 4 }}
+    {{- include "brigade-metrics.grafana.labels" . | nindent 4 }}
+  {{- with .Values.grafana.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  rules:
+  - host: {{ .Values.grafana.host }}
+    http:
+      paths:
+      {{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion }}
+      - pathType: ImplementationSpecific
+        path: /
+        backend:
+          service:
+            name: {{ include "brigade-metrics.grafana.fullname" . }}
+            port:
+              {{- if .Values.grafana.tls.enabled }}
+              number: 443
+              {{- else }}
+              number: 80
+              {{- end }}
+      {{- else }}
+      - backend:
+          serviceName: {{ include "brigade-metrics.grafana.fullname" . }}
+          {{- if .Values.grafana.tls.enabled }}
+          servicePort: 443
+          {{- else }}
+          servicePort: 80
+          {{- end }}
+      {{- end}}
+  {{- if .Values.grafana.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - {{ .Values.grafana.host }}
+    secretName: {{ include "brigade-metrics.grafana.fullname" . }}-ingress-cert
+  {{- end }}
+{{- end }}

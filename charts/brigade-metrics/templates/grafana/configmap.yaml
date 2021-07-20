@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "brigade-metrics.nginx.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "brigade-metrics.labels" . | nindent 4 }}
+    {{- include "brigade-metrics.nginx.labels" . | nindent 4 }}
+data:
+  nginx.conf: |-
+    events {
+        worker_connections  4096;  ## Default: 1024
+    }
+
+    http {
+        server {
+            {{- if .Values.grafana.tls.enabled }}
+            listen 443 ssl;
+            server_name         www.example.com;
+            ssl_certificate     /var/lib/nginx/certs/tls.crt;
+            ssl_certificate_key /var/lib/nginx/certs/tls.key;
+            {{- else }}
+            listen 80;
+            {{- end }}
+        
+            root /usr/share/nginx/html;
+            index index.html index.htm;
+
+            location / {
+              proxy_pass            http://localhost:3000/;
+              proxy_set_header      Authorization "";
+              {{- if .Values.grafana.auth.proxy }}
+              auth_basic            "Administrator’s Area";
+              auth_basic_user_file  /etc/nginx/.htpasswd; 
+              {{- end }}
+            }
+        }
+    }
+  
+  .htpasswd: |-
+    {{ htpasswd .Values.grafana.auth.username .Values.grafana.auth.password }}
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "brigade-metrics.grafana.fullname" . }}-datasources
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "brigade-metrics.labels" . | nindent 4 }}
+    {{- include "brigade-metrics.grafana.labels" . | nindent 4 }}
+data:
+  datasources.yaml: |-
+    apiVersion: 1
+
+    datasources:
+    - name: Brigade-metrics
+      type: prometheus
+      access: proxy
+      isDefault: true
+      url: http://{{ include "brigade-metrics.prometheus.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local

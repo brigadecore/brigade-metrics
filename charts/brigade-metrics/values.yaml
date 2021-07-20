@@ -1,0 +1,232 @@
+## Default values for brigade-metrics
+## This is a YAML-formatted file.
+## Declare variables to be passed into your templates.
+
+## All settings for the exporter
+exporter:
+
+  image:
+    repository: quillie/brigade-metrics-exporter
+    ## tag should only be specified if you want to override Chart.appVersion
+    ## The default tag is the value of .Chart.AppVersion
+    # tag:
+    pullPolicy: IfNotPresent
+
+  ## Settings related to connecting to the Brigade API server
+  brigade:
+    ## Address of your Brigade 2 API server, including leading protocol
+    ## (http:// or https://)
+    apiAddress: https://brigade-apiserver.brigade.svc.cluster.local
+    ## API token belonging to a Brigade 2 service account
+    apiToken: <placeholder>
+    ## Whether to ignore cert warning from the API server
+    apiIgnoreCertWarnings: true
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as
+    # a conscious choice for the user. This also increases chances charts run on
+    # environments with little resources, such as Minikube. If you do want to
+    # specify resources, uncomment the following lines, adjust them as
+    # necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  service:
+    type: ClusterIP
+    ## Host port the service will be mapped to when service type is either
+    ## NodePort or LoadBalancer. If not specified, Kubernetes chooses.
+    # nodePort: 31700
+
+## All settings for the Prometheus server
+prometheus:
+
+  image:
+    repository: prom/prometheus
+    tag: v2.28.0
+    pullPolicy: IfNotPresent
+
+  scrapeInterval: 3s
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as
+    # a conscious choice for the user. This also increases chances charts run on
+    # environments with little resources, such as Minikube. If you do want to
+    # specify resources, uncomment the following lines, adjust them as
+    # necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  ## Persist data to a volume
+  persistence:
+    enabled: true
+    ## If undefined, the cluster's default storage class is used
+    # storageClass:
+    accessMode: ReadWriteOnce
+    size: 8Gi
+
+  service:
+    type: ClusterIP
+    ## Host port the service will be mapped to when service type is either
+    ## NodePort or LoadBalancer. If not specified, Kubernetes chooses.
+    # nodePort: 31800
+
+grafana:
+
+  ## Host should be set accurately for a variety of reasons including
+  ## ingress resources and cert generation.
+  host: localhost:31700
+
+  image:
+    repository: quillie/brigade-metrics-grafana
+    ## tag should only be specified if you want to override Chart.appVersion
+    ## The default tag is the value of .Chart.AppVersion
+    # tag:
+    pullPolicy: IfNotPresent
+
+  ## TODO: Clean up and document these options
+  auth:
+    ## Specify whether or not to use a reverse proxy + shared account
+    proxy: false
+    username: willie
+    password: test
+  
+  ## Persist data to a volume
+  persistence:
+    enabled: true
+    ## If undefined, the cluster's default storage class is used
+    # storageClass:
+    accessMode: ReadWriteOnce
+    size: 8Gi
+
+  tls:
+    ## Whether to enable TLS. If true then you MUST do ONE of three things to
+    ## ensure the existence of a TLS certificate:
+    ##
+    ## 1. Set generateSelfSignedCert below to true (the default)
+    ## 2. OR Set values for BOTH the cert and key fields below
+    ## 3. OR create a cert secret named <Helm release name>-grafana-cert in
+    ##    the same namespace as Brigade Prometheus. This secret could be created
+    ##    manually or through other means, such as a cert manager.
+    enabled: true
+    ## Whether to generate a self-signed certificate. If true, a new certificate
+    ## will be generated for every revision of the corresponding Helm release.
+    ## Since the certificate is self-signed, it will not be trusted by clients
+    ## and should absolutely not be used for production, but having this enabled
+    ## as a default effectively discourages the more heavy-handed option to
+    ## disable TLS entirely. If TLS is enabled and cert generation is DISABLED,
+    ## users MUST provide their own cert and private key below OR create a cert
+    ## secret named <Helm release name>-grafana-cert in the same namespace as
+    ## Brigade Prometheus.
+    generateSelfSignedCert: true
+    # cert: base 64 encoded cert goes here
+    # key: base 64 encoded key goes here
+
+  ingress:
+    ## Whether to enable ingress. By default, this is disabled. Enabling ingress
+    ## is advanced usage.
+    enabled: false
+    ## Optionally use annotations specified by your ingress controller's
+    ## documentation to customize the behavior of the ingress resource.
+    annotations:
+      # kubernetes.io/ingress.class: nginx
+    tls:
+      ## Whether to enable TLS. If true then you MUST do ONE of three things to
+      ## ensure the existence of a TLS certificate:
+      ##
+      ## 1. Set generateSelfSignedCert below to true (the default)
+      ## 2. OR Set values for BOTH the cert and key fields below
+      ## 3. OR create a cert secret named
+      ##    <Helm release name>-grafana-ingress-cert in the same namespace as
+      ##    Brigade Prometheus. This secret could be created manually or through
+      ##    other means, such as a cert manager.
+      ##
+      ## Note there is a wide disparity in the feature set of various ingress
+      ## controllers and some ingress controllers may be able to provision a
+      ## certificate for you even with TLS disabled here. Consult your ingress
+      ## controller's documentation.
+      enabled: true
+      ## Whether to generate a self-signed certificate. If true, a new
+      ## certificate will be generated for every revision of the corresponding
+      ## Helm release. Since the certificate is self-signed, it will not be
+      ## trusted by clients and should absolutely not be used for production,
+      ## but having this enabled as a default effectively discourages the more
+      ## heavy-handed option to disable TLS entirely. If ingress TLS is enabled
+      ## and cert generation is DISABLED, users MUST provide their own cert and
+      ## private key below OR create a cert secret named
+      ## <Helm release name>-grafana-ingres-cert in the same namespace as
+      ## Brigade Prometheus.
+      generateSelfSignedCert: true
+      # cert: base 64 encoded cert goes here
+      # key: base 64 encoded key goes here
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as
+    # a conscious choice for the user. This also increases chances charts run on
+    # environments with little resources, such as Minikube. If you do want to
+    # specify resources, uncomment the following lines, adjust them as
+    # necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  service:
+    ## If you're going to use an ingress controller, you can change the service
+    ## type to CLusterIP.
+    type: LoadBalancer
+    ## Host port the service will be mapped to when service type is either
+    ## NodePort or LoadBalancer. If not specified, Kubernetes chooses.
+    # nodePort: 31900
+
+## All settings for the nginx server
+nginx:
+
+  image:
+    repository: nginx
+    tag: 1.20.1-alpine
+    pullPolicy: IfNotPresent
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as
+    # a conscious choice for the user. This also increases chances charts run on
+    # environments with little resources, such as Minikube. If you do want to
+    # specify resources, uncomment the following lines, adjust them as
+    # necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  service:
+    type: ClusterIP
+    ## Host port the service will be mapped to when service type is either
+    ## NodePort or LoadBalancer. If not specified, Kubernetes chooses.
+    # nodePort: 31800

@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "brigade-metrics.exporter.fullname" . }}
+  labels:
+    {{- include "brigade-metrics.labels" . | nindent 4 }}
+    {{- include "brigade-metrics.exporter.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "brigade-metrics.selectorLabels" . | nindent 6 }}
+      {{- include "brigade-metrics.exporter.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "brigade-metrics.selectorLabels" . | nindent 8 }}
+        {{- include "brigade-metrics.exporter.labels" . | nindent 8 }}
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/exporter/secret.yaml") . | sha256sum }}
+    spec:
+      containers:
+      - name: exporter
+        image: {{ .Values.exporter.image.repository }}:{{ default .Chart.AppVersion .Values.exporter.image.tag }}
+        imagePullPolicy: {{ .Values.exporter.image.pullPolicy }}
+        env:
+        - name: API_ADDRESS
+          value: {{ .Values.exporter.brigade.apiAddress }}
+        - name: API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade-metrics.exporter.fullname" . }}
+              key: api-token
+        - name: API_IGNORE_CERT_WARNINGS
+          value: {{ quote .Values.exporter.brigade.apiIgnoreCertWarnings }}
+        - name: PROM_SCRAPE_INTERVAL
+          value: {{ quote .Values.prometheus.scrapeInterval }}
+      {{- with .Values.exporter.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.exporter.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

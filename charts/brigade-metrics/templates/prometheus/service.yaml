@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "brigade-metrics.prometheus.fullname" . }}
+  labels:
+    {{- include "brigade-metrics.labels" . | nindent 4 }}
+    {{- include "brigade-metrics.prometheus.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.prometheus.service.type }}
+  ports:
+  - port: 80
+    targetPort: 9090
+    {{- if and (or (eq .Values.prometheus.service.type "NodePort") (eq .Values.prometheus.service.type "LoadBalancer")) .Values.prometheus.service.nodePort}}
+    nodePort: {{ .Values.prometheus.service.nodePort }}
+    {{- end }}
+    protocol: TCP
+  selector:
+    {{- include "brigade-metrics.selectorLabels" . | nindent 8 }}
+    {{- include "brigade-metrics.prometheus.labels" . | nindent 8 }}

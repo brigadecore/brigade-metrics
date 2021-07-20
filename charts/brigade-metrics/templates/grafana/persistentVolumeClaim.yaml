@@ -1,0 +1,16 @@
+{{- if .Values.grafana.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: 
+  name: {{ include "brigade-metrics.grafana.fullname" . }}
+  labels:
+    {{- include "brigade-metrics.labels" . | nindent 4 }}
+    {{- include "brigade-metrics.grafana.labels" . | nindent 4 }}
+spec:  
+  storageClassName: {{ .Values.grafana.persistence.storageClass }}
+  accessModes:
+   - {{ .Values.grafana.persistence.accessMode }}
+  resources:
+   requests:   
+     storage: {{ .Values.grafana.persistence.size }}
+{{- end }}

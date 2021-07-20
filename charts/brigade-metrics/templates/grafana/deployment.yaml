@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "brigade-metrics.grafana.fullname" . }}
+  labels:
+    {{- include "brigade-metrics.labels" . | nindent 4 }}
+    {{- include "brigade-metrics.grafana.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "brigade-metrics.selectorLabels" . | nindent 6 }}
+      {{- include "brigade-metrics.grafana.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "brigade-metrics.selectorLabels" . | nindent 8 }}
+        {{- include "brigade-metrics.grafana.labels" . | nindent 8 }}
+      annotations:
+        checksum/configmap: {{ include (print $.Template.BasePath "/grafana/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/grafana/secret.yaml") . | sha256sum }}
+        {{- if .Values.grafana.tls.enabled }}
+        checksum/cert-secret: {{ include (print $.Template.BasePath "/grafana/cert-secret.yaml") . | sha256sum }}
+        {{- end }}
+    spec:
+      containers:
+      - name: grafana
+        image: {{ .Values.grafana.image.repository }}:{{ default .Chart.AppVersion .Values.grafana.image.tag }}
+        imagePullPolicy: {{ .Values.grafana.image.pullPolicy }}
+        securityContext:
+          runAsGroup: 472
+          runAsNonRoot: true
+          runAsUser: 472
+        env:
+        {{- if .Values.grafana.auth.proxy }}
+        - name: GF_AUTH_ANONYMOUS_ENABLED
+          value: "true"
+        - name: GF_AUTH_DISABLE_LOGIN_FORM
+          value: "true"
+        {{- end }}
+        - name: GF_SECURITY_ADMIN_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade-metrics.grafana.fullname" . }}
+              key: adminUsername
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "brigade-metrics.grafana.fullname" . }}
+              key: adminPassword
+        volumeMounts:
+        - name: grafana-datasources
+          mountPath: /etc/grafana/provisioning/datasources
+        - name: data
+          mountPath: /var/lib/grafana/data
+      - name: nginx
+        image: {{ .Values.nginx.image.repository }}:{{ default .Chart.AppVersion .Values.nginx.image.tag }}
+        imagePullPolicy: {{ .Values.nginx.image.pullPolicy }}
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/
+        {{- if .Values.grafana.tls.enabled }}
+        - name: cert
+          mountPath: /var/lib/nginx/certs
+          readOnly: true
+        {{- end }}
+        ports:
+        {{- if .Values.grafana.tls.enabled }}
+        - containerPort: 443
+          name: https
+          protocol: TCP
+        {{- else }}
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        {{- end }}
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: {{ include "brigade-metrics.nginx.fullname" . }}
+      {{- if .Values.grafana.tls.enabled }}
+      - name: cert
+        secret:
+          secretName: {{ include "brigade-metrics.grafana.fullname" . }}-cert
+      {{- end }}
+      - name: grafana-datasources
+        configMap:
+          name: {{ include "brigade-metrics.grafana.fullname" . }}-datasources
+      - name: data
+        {{- if .Values.grafana.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "brigade-metrics.grafana.fullname" . }}
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      securityContext:
+        fsGroup: 472
+      {{- with .Values.grafana.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.grafana.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
