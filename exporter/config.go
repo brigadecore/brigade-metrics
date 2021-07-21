@@ -3,9 +3,9 @@ package main
 import (
 	"time"
 
+	"github.com/brigadecore/brigade-metrics/exporter/internal/http"
+	"github.com/brigadecore/brigade-metrics/exporter/internal/os"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
-	"github.com/willie-yao/brigade-metrics/exporter/internal/http"
-	"github.com/willie-yao/brigade-metrics/exporter/internal/os"
 )
 
 // apiClientConfig populates the Brigade SDK's APIClientOptions from
