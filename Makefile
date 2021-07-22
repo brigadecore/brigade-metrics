@@ -174,10 +174,6 @@ publish-chart:
 # Targets to facilitate hacking on Brigade Prometheus.                         #
 ################################################################################
 
-.PHONY: hack-new-kind-cluster
-hack-new-kind-cluster:
-	hack/kind/new-cluster.sh
-
 .PHONY: hack-build-images
 hack-build-images: hack-build-exporter hack-pull-grafana
 
