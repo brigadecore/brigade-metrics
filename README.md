@@ -1,4 +1,4 @@
-# Brigade Metrics: One-Step Monitoring for Brigade 2
+# Brigade Metrics: Monitoring for Brigade 2
 
 Brigade Metrics adds monitoring capabilities to a Brigade 2 installation. It
 utilizes Brigade APIs to export time series metrics to Prometheus and makes
@@ -9,52 +9,123 @@ development, as such, the same is true for this add-on component.
 
 ## Getting Started
 
-Comprehensive documentation will become available in conjunction with a future
-release. In the meantime, here is a little to get you started.
+Follow these steps to get started.
 
 ### Prerequisites
 
 Since Brigade Metrics aggregates and exposes metrics for a running Brigade 2
-installation, an operation Brigade 2 beta installation is a prerequisite. Please
-refer to
-[Brigade 2's own getting started documentation](https://github.com/brigadecore/brigade/tree/v2).
+installation, an operational Brigade 2 installation is a prerequisite.
 
-Once Brigade 2 is up and running, create a service account, and give it `READ`
-permissions:
+Note that Brigade Metrics is only compatible with the _beta_ series of Brigade 2
+releases.
+
+If necessary, please refer to
+[Brigade 2's own getting started documentation](https://github.com/brigadecore/brigade/tree/v2)
+for guidance in fulfilling this dependency.
+
+Once Brigade 2 is operational, create a service account for use by Brigade
+Metrics:
 
 ```console
-$ brig sa create -i brigade-metrics -d brigade-metrics
+$ brig service-account create \
+  --id brigade-metrics \
+  --description "Used by Brigade Metrics"
+```
+
+This command will display a token that Brigade Metrics can use for
+authenticating to the Brigade 2 API server. Take note of this value. It will
+be required in subsequent steps and cannot be retrieved later through any other
+means.
+
+Now grant the service account global read permissions:
+
+```console
 $ brig role grant READER --service-account brigade-metrics
 ```
 
-Save the service account token somewhere safe.
-
 ### Installing Brigade Metrics
 
-Since this add-on is still very much a prototype, we're not currently publishing
-a Helm chart anywhere. You will need to clone this repository to obtain the
-chart and install.
+For now, we're using the [GitHub Container Registry](https://ghcr.io) (which is
+an [OCI registry](https://helm.sh/docs/topics/registries/)) to host our Helm
+chart. Helm 3 has _experimental_ support for OCI registries. In the event that
+the Helm 3 dependency proves troublesome for users, or in the event that this
+experimental feature goes away, or isn't working like we'd hope, we will revisit
+this choice before going GA.
 
-Once the repository is cloned, open the `values.yaml` file, and paste the
-service account token into the `exporter.brigade.apiToken` field.
-
-There are two methods of authentication you can choose from for logging into Grafana. 
-1. Option to use Grafana's built in user management system. The username and password for the admin account are specified in the `grafana.auth` fields, and the admin can handle user management using the Grafana UI.
-2. Option to use an nginx reverse proxy and a shared username/password to access Grafana in anonymous mode.
-
-For option 1, set `grafana.auth.proxy` to false in `values.yaml`, and true for option 2.
-
-In addition, you have the option to enable tls or ingress for grafana, and both options can be configured in `values.yaml`.
-
-Save the file, and run `make hack` from the project's root directory.
-
-Once all three pods of the project are up and running, run the following command to expose the Grafana frontend:
+To install Brigade Metrics, begin by pulling the chart from GCR and exporting
+it to some location on your local system. Here, we export it to `~/charts`:
 
 ```console
-$ kubectl port-forward service/brigade-metrics-grafana 3000:<80 (tls disabled), 443 (tls enabled)> -n brigade-metrics
+$ export HELM_EXPERIMENTAL_OCI=1
+$ helm chart pull ghcr.io/brigadecore/brigade-metrics:v0.1.0
+$ helm chart export ghcr.io/brigadecore/brigade-metrics:v0.1.0 -d ~/charts
 ```
 
-Enter your supplied credentials. You can now access the Grafana dashboard!
+Use the following command to extract the full set of configuration options from
+the chart. Here we're storing a copy at `~/brigade-metrics-values.yaml`:
+
+```console
+$ helm inspect values ~/charts/brigade-metrics > ~/brigade-metrics-values.yaml
+```
+
+Edit the configuration (`~/brigade-metrics-values.yaml` in this example). At
+minimum, you will need to make the following changes:
+
+* Set the value of `exporter.brigade.apiAddress` to the address of your Brigade 2
+  API server. This should utilize the _internal_ DNS hostname by which that API
+  server is reachable _within_ your Kubernetes cluster. This value is defaulted
+  to `https://brigade-apiserver.brigade.svc.cluster.local`, but may need to be
+  updated if you installed Brigade 2 in a different namespace.
+
+* Set the value of `exporter.brigade.apiToken` to the service account token that
+  was generated earlier.
+
+* Specify a username and password for the metrics dashboard (Grafana) by setting
+  values for `grafana.auth.username` and `grafana.auth.password`.
+
+Install Brigade Metrics, referencing your edited configuration:
+
+```console
+$ helm install brigade-metrics ~/charts/brigade-metrics \
+  --create-namespace \
+  --namespace brigade-metrics \
+  --values ~/brigade-metrics-values.yaml
+```
+
+### Accessing the Dashboard
+
+Use the following command to determine when the dashboard (Grafana) is ready:
+
+```console
+$ kubectl get deployment brigade-metrics-grafana --namespace brigade-metrics 
+```
+
+If you deployed Brigade Metrics on a public cloud _and_ kept the default service
+type of `LoadBalancer` for the dashboard, then use the following command to
+determine when your dashboard has been assigned a public IP:
+
+```console
+$ kubectl get service brigade-metrics-grafana --namespace brigade-metrics
+```
+
+The dashboard should be accessible at the public IP using HTTPS. If you used
+the default, auto-generated certificate, expect to receive a cert warning.
+
+If you deployed Brigade Metrics on a local cluster or changed the service type
+for the dashboard to something like `ClusterIP`, then use port forwarding to
+access the dashboard:
+
+```console
+$ kubectl port-forward \
+  service/brigade-metrics-grafana \
+  --namespace brigade-metrics \
+  8443:443
+```
+
+The dashboard should be accessible at `https://localhost:8443`. Expect to
+receive a cert warning.
+
+Log in using the username and password you selected in the previous section.
 
 ## Contributing
 
@@ -68,4 +139,4 @@ We have a slack channel!
 [Kubernetes/#brigade](https://kubernetes.slack.com/messages/C87MF1RFD) Feel free
 to join for any support questions or feedback, we are happy to help. To report
 an issue or to request a feature open an issue
-[here](https://github.com/brigadecore/brigade/issues)
+[here](https://github.com/brigadecore/brigade-metrics/issues)
