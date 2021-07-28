@@ -1,9 +1,12 @@
 apiVersion: v2
 name: brigade-metrics
 description: |
-  A Helm chart for Brigade Prometheus
+  A Helm chart for Brigade Metrics
 type: application
 version: 0.1.0
 appVersion: v0.1.0
 sources:
-- https://github.com/willie-yao/brigade-metrics
+- https://github.com/brigadecore/brigade-metrics
+maintainers:
+- name: The Brigade Maintainers
+  email: cncf-brigade-maintainers@lists.cncf.io

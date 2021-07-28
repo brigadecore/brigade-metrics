@@ -5,13 +5,13 @@ import (
 	"net/http"
 	"time"
 
+	libHTTP "github.com/brigadecore/brigade-metrics/exporter/internal/http"
+	"github.com/brigadecore/brigade-metrics/exporter/internal/signals"
+	"github.com/brigadecore/brigade-metrics/exporter/internal/system"
+	"github.com/brigadecore/brigade-metrics/exporter/internal/version"
 	"github.com/brigadecore/brigade/sdk/v2"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	libHTTP "github.com/willie-yao/brigade-metrics/exporter/internal/http"
-	"github.com/willie-yao/brigade-metrics/exporter/internal/signals"
-	"github.com/willie-yao/brigade-metrics/exporter/internal/system"
-	"github.com/willie-yao/brigade-metrics/exporter/internal/version"
 )
 
 func main() {

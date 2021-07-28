@@ -1,4 +1,4 @@
-module github.com/willie-yao/brigade-metrics
+module github.com/brigadecore/brigade-metrics
 
 go 1.16
 

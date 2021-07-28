@@ -4,9 +4,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/brigadecore/brigade-metrics/exporter/internal/http"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 	"github.com/stretchr/testify/require"
-	"github.com/willie-yao/brigade-metrics/exporter/internal/http"
 )
 
 // Note that unit testing in Go does NOT clear environment variables between
