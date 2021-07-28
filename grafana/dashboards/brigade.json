@@ -4,25 +4,10 @@
   "uid": "xDvsAAR7k",
   "title": "Brigade",
   "version": 4,
-  "refresh": "2s",
+  "refresh": "5s",
   "style": "dark",
   "editable": false,
   "graphTooltip": 0,
-  "timepicker": {
-    "refresh_intervals": [
-      "2s",
-      "5s",
-      "10s",
-      "30s",
-      "1m",
-      "5m",
-      "15m",
-      "30m",
-      "1h",
-      "2h",
-      "1d"
-    ]
-  },
   "time": {
     "from": "now-30m",
     "to": "now"
@@ -204,6 +189,7 @@
         "w": 18,
         "h": 12
       },
+      "interval": "2s",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -222,7 +208,7 @@
             },
             "lineInterpolation": "linear",
             "lineWidth": 1,
-            "pointSize": 5,
+            "pointSize": 4,
             "scaleDistribution": {
               "type": "linear"
             },
