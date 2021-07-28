@@ -138,7 +138,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "brigade_all_workers_by_phase",
+          "expr": "brigade_events_by_worker_phase",
           "legendFormat": "{{ workerPhase }}",
           "refId": "A"
         }
@@ -261,7 +261,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "brigade_all_workers_by_phase{workerPhase=\"PENDING\"}",
+          "expr": "brigade_events_by_worker_phase{workerPhase=\"PENDING\"}",
           "legendFormat": "Workers",
           "refId": "A"
         },

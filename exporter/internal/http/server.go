@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/brigadecore/brigade-metrics/exporter/internal/file"
 	"github.com/pkg/errors"
-	"github.com/willie-yao/brigade-metrics/exporter/internal/file"
 )
 
 // ServerConfig represents optional configuration for an HTTP/S server.
