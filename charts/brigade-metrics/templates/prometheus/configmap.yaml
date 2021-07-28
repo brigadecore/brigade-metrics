@@ -9,15 +9,12 @@ metadata:
 data:
   prometheus.yml: |-
     global:
-      scrape_interval: 15s
+      scrape_interval: {{ .Values.prometheus.scrapeInterval }}
       external_labels:
         monitor: 'codelab-monitor'
 
     scrape_configs:
     - job_name: 'node-exporter'
-
-      # Override the global default and scrape targets from this job every 5 seconds.
-      scrape_interval: {{ .Values.prometheus.scrapeInterval }}
 
       static_configs:
       - targets:
