@@ -11,7 +11,7 @@ COPY go.sum go.sum
 
 RUN go build \
   -o bin/exporter \
-  -ldflags "-w -X github.com/brigadecore/brigade-metrics/exporter/internal/version.version=$VERSION -X github.com/brigadecore/brigade-metrics/exporter/internal/version.commit=$COMMIT" \
+  -ldflags "-w -X github.com/brigadecore/brigade-foundations/version.version=$VERSION -X github.com/brigadecore/brigade-foundations/version.commit=$COMMIT" \
   ./exporter
 
 EXPOSE 8080
