@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/brigadecore/brigade-metrics/exporter/internal/http"
+	"github.com/brigadecore/brigade-foundations/http"
 	"github.com/brigadecore/brigade/sdk/v2/restmachinery"
 	"github.com/stretchr/testify/require"
 )
