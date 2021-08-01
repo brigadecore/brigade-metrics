@@ -31,10 +31,10 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		go newMetricsExporter(
+		newMetricsExporter(
 			sdk.NewAPIClient(address, token, &opts),
 			time.Duration(scrapeInterval),
-		).run(ctx)
+		).start(ctx)
 	}
 
 	var server libHTTP.Server

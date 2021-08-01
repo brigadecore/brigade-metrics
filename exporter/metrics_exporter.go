@@ -66,25 +66,34 @@ func newMetricsExporter(
 	}
 }
 
-func (m *metricsExporter) run(ctx context.Context) {
+func (m *metricsExporter) start(ctx context.Context) {
+	go m.recordMetric(ctx, func() error {
+		return m.recordProjectsCount()
+	})
+	go m.recordMetric(ctx, func() error {
+		return m.recordUsersCount()
+	})
+	go m.recordMetric(ctx, func() error {
+		return m.recordServiceAccountsCount()
+	})
+	go m.recordMetric(ctx, func() error {
+		return m.recordEventCountsByWorkersPhase()
+	})
+	go m.recordMetric(ctx, func() error {
+		return m.recordPendingJobsCount()
+	})
+}
+
+func (m *metricsExporter) recordMetric(
+	ctx context.Context,
+	recordFn func() error,
+) {
 	ticker := time.NewTicker(m.scrapeInterval)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ticker.C:
-			if err := m.recordProjectsCount(); err != nil {
-				log.Println(err)
-			}
-			if err := m.recordUsersCount(); err != nil {
-				log.Println(err)
-			}
-			if err := m.recordServiceAccountsCount(); err != nil {
-				log.Println(err)
-			}
-			if err := m.recordEventCountsByWorkersPhase(); err != nil {
-				log.Println(err)
-			}
-			if err := m.recordPendingJobsCount(); err != nil {
+			if err := recordFn(); err != nil {
 				log.Println(err)
 			}
 		case <-ctx.Done():
@@ -137,7 +146,8 @@ func (m *metricsExporter) recordServiceAccountsCount() error {
 	}
 	m.serviceAccountsGauge.Set(
 		float64(
-			int64(len(serviceAccounts.Items)) + serviceAccounts.RemainingItemCount,
+			int64(len(serviceAccounts.Items)) +
+				serviceAccounts.RemainingItemCount,
 		),
 	)
 	return nil
