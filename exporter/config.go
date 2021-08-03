@@ -26,7 +26,7 @@ func apiClientConfig() (string, string, restmachinery.APIClientOptions, error) {
 }
 
 func scrapeDuration() (time.Duration, error) {
-	return os.GetDurationFromEnvVar("PROM_SCRAPE_INTERVAL", 5*time.Second)
+	return os.GetDurationFromEnvVar("PROM_SCRAPE_INTERVAL", 2*time.Second)
 }
 
 // serverConfig populates configuration for the HTTP/S server from environment
