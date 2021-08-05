@@ -78,7 +78,7 @@
     },
     {
       "id": 14,
-      "title": "Events Counts by Worker Phase",
+      "title": "Event Counts by Worker Phase",
       "type": "stat",
       "gridPos": {
         "x": 6,
