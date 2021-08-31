@@ -52,20 +52,20 @@ the Helm 3 dependency proves troublesome for users, or in the event that this
 experimental feature goes away, or isn't working like we'd hope, we will revisit
 this choice before going GA.
 
-To install Brigade Metrics, begin by pulling the chart from GCR and exporting
-it to some location on your local system. Here, we export it to `~/charts`:
+First, be sure you are using
+[Helm 3.7.0-rc.1](https://github.com/helm/helm/releases/tag/v3.7.0-rc.1) and
+enable experimental OCI support:
 
 ```console
 $ export HELM_EXPERIMENTAL_OCI=1
-$ helm chart pull ghcr.io/brigadecore/brigade-metrics:v0.1.0
-$ helm chart export ghcr.io/brigadecore/brigade-metrics:v0.1.0 -d ~/charts
 ```
 
 Use the following command to extract the full set of configuration options from
 the chart. Here we're storing a copy at `~/brigade-metrics-values.yaml`:
 
 ```console
-$ helm inspect values ~/charts/brigade-metrics > ~/brigade-metrics-values.yaml
+$ helm inspect values oci://ghcr.io/brigadecore/brigade-metrics \
+  --version v0.2.0 > ~/brigade-metrics-values.yaml
 ```
 
 Edit the configuration (`~/brigade-metrics-values.yaml` in this example). At
@@ -86,7 +86,9 @@ minimum, you will need to make the following changes:
 Install Brigade Metrics, referencing your edited configuration:
 
 ```console
-$ helm install brigade-metrics ~/charts/brigade-metrics \
+$ helm install brigade-metrics \
+  oci://ghcr.io/brigadecore/brigade-metrics \
+  --version v0.2.0 \
   --create-namespace \
   --namespace brigade-metrics \
   --values ~/brigade-metrics-values.yaml
