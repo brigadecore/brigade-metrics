@@ -1,6 +1,7 @@
 # Brigade Metrics: Monitoring for Brigade 2
 
 [![codecov](https://codecov.io/gh/brigadecore/brigade-metrics/branch/main/graph/badge.svg?token=ER6NYB0V9K)](https://codecov.io/gh/brigadecore/brigade-metrics)
+[![Go Report Card](https://goreportcard.com/badge/github.com/brigadecore/brigade-metrics)](https://goreportcard.com/report/github.com/brigadecore/brigade-metrics)
 
 Brigade Metrics adds monitoring capabilities to a Brigade 2 installation. It
 utilizes Brigade APIs to export time series metrics to Prometheus and makes
