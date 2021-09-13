@@ -31,8 +31,8 @@ Metrics:
 
 ```console
 $ brig service-account create \
-  --id brigade-metrics \
-  --description "Used by Brigade Metrics"
+    --id brigade-metrics \
+    --description "Used by Brigade Metrics"
 ```
 
 This command will display a token that Brigade Metrics can use for
@@ -68,7 +68,7 @@ the chart. Here we're storing a copy at `~/brigade-metrics-values.yaml`:
 
 ```console
 $ helm inspect values oci://ghcr.io/brigadecore/brigade-metrics \
-  --version v0.2.0 > ~/brigade-metrics-values.yaml
+    --version v0.2.0 > ~/brigade-metrics-values.yaml
 ```
 
 Edit the configuration (`~/brigade-metrics-values.yaml` in this example). At
@@ -90,11 +90,11 @@ Install Brigade Metrics, referencing your edited configuration:
 
 ```console
 $ helm install brigade-metrics \
-  oci://ghcr.io/brigadecore/brigade-metrics \
-  --version v0.2.0 \
-  --create-namespace \
-  --namespace brigade-metrics \
-  --values ~/brigade-metrics-values.yaml
+    oci://ghcr.io/brigadecore/brigade-metrics \
+    --version v0.2.0 \
+    --create-namespace \
+    --namespace brigade-metrics \
+    --values ~/brigade-metrics-values.yaml
 ```
 
 ### Accessing the Dashboard
@@ -122,9 +122,9 @@ access the dashboard:
 
 ```console
 $ kubectl port-forward \
-  service/brigade-metrics-grafana \
-  --namespace brigade-metrics \
-  8443:443
+    service/brigade-metrics-grafana \
+    --namespace brigade-metrics \
+    8443:443
 ```
 
 The dashboard should be accessible at `https://localhost:8443`. Expect to
