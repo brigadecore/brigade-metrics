@@ -1,5 +1,6 @@
 # Brigade Metrics: Monitoring for Brigade 2
 
+![build](https://badgr.brigade2.io/v1/github/checks/brigadecore/brigade-metrics/badge.svg?appID=99005)
 [![codecov](https://codecov.io/gh/brigadecore/brigade-metrics/branch/main/graph/badge.svg?token=ER6NYB0V9K)](https://codecov.io/gh/brigadecore/brigade-metrics)
 [![Go Report Card](https://goreportcard.com/badge/github.com/brigadecore/brigade-metrics)](https://goreportcard.com/report/github.com/brigadecore/brigade-metrics)
 
