@@ -83,8 +83,11 @@ minimum, you will need to make the following changes:
 * Set the value of `exporter.brigade.apiToken` to the service account token that
   was generated earlier.
 
-* Specify a username and password for the metrics dashboard (Grafana) by setting
-  values for `grafana.auth.username` and `grafana.auth.password`.
+* `grafana.host`: Set this to the host name where you'd like the dashboard
+  (Grafana) to be accessible.
+
+* Specify a username and password for the metrics dashboard by setting values
+  for `grafana.auth.username` and `grafana.auth.password`.
 
 Install Brigade Metrics, referencing your edited configuration:
 
