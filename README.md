@@ -55,13 +55,13 @@ $ brig role grant READER --service-account brigade-metrics
 
 For now, we're using the [GitHub Container Registry](https://ghcr.io) (which is
 an [OCI registry](https://helm.sh/docs/topics/registries/)) to host our Helm
-chart. Helm 3 has _experimental_ support for OCI registries. In the event that
-the Helm 3 dependency proves troublesome for users, or in the event that this
+chart. Helm 3.7 has _experimental_ support for OCI registries. In the event that
+the Helm 3.7 dependency proves troublesome for users, or in the event that this
 experimental feature goes away, or isn't working like we'd hope, we will revisit
 this choice before going GA.
 
 First, be sure you are using
-[Helm 3.7.0-rc.1](https://github.com/helm/helm/releases/tag/v3.7.0-rc.1) and
+[Helm 3.7.0](https://github.com/helm/helm/releases/tag/v3.7.0) or greater and
 enable experimental OCI support:
 
 ```console
