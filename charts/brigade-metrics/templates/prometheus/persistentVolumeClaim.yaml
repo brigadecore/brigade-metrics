@@ -7,7 +7,9 @@ metadata:
     {{- include "brigade-metrics.labels" . | nindent 4 }}
     {{- include "brigade-metrics.prometheus.labels" . | nindent 4 }}
 spec:  
+  {{- if .Values.prometheus.persistence.storageClass }}
   storageClassName: {{ .Values.prometheus.persistence.storageClass }}
+  {{- end }}
   accessModes:
    - {{ .Values.prometheus.persistence.accessMode }}
   resources:
