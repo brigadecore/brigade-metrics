@@ -99,12 +99,28 @@ grafana:
     # tag:
     pullPolicy: IfNotPresent
 
-  ## TODO: Clean up and document these options
   auth:
-    ## Specify whether or not to use a reverse proxy + shared account
+    ## Brigade Metrics' Grafana dashboard can be configured with one of two
+    ## different authentication modes.
+    ##
+    ## If proxy is set to false (the default), the username and password below
+    ## will be for an admin who can manage access for other users directly
+    ## through Grafana. This is an appropriate option if an admin wants to
+    ## tightly control access to the dashboard, but it is also a more onerous
+    ## option since an admin must be willing and able to take on the
+    ## responsibility of user management. This option also permits the admin
+    ## user to perform further customization to the dashboard.
+    ##
+    ## If proxy is set to true, the username and password below enabled
+    ## "anonymous" read-only access to the Grafana dashboard via an Nginx
+    ## reverse proxy and basic auth. This is an appropriate option if access to
+    ## the dashboard does not need to be tightly controlled and the credentials
+    ## can reasonably be shared among dashboard users.
     proxy: false
-    username: willie
-    password: test
+    ## Username MUST be specified
+    username:
+    ## Password MUST be specified
+    password:
   
   ## Persist data to a volume
   persistence:

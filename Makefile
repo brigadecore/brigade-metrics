@@ -215,7 +215,9 @@ hack-deploy:
 		--set exporter.image.pullPolicy=$(IMAGE_PULL_POLICY) \
 		--set grafana.image.repository=$(DOCKER_IMAGE_PREFIX)grafana \
 		--set grafana.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set grafana.image.pullPolicy=$(IMAGE_PULL_POLICY)
+		--set grafana.image.pullPolicy=$(IMAGE_PULL_POLICY) \
+		--set grafana.auth.username=admin \
+		--set grafana.auth.password=admin
 
 .PHONY: hack
 hack: hack-push-images hack-deploy
