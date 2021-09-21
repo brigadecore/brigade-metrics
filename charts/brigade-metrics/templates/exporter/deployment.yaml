@@ -30,7 +30,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: {{ include "brigade-metrics.exporter.fullname" . }}
-              key: api-token
+              key: brigadeAPIToken
         - name: API_IGNORE_CERT_WARNINGS
           value: {{ quote .Values.exporter.brigade.apiIgnoreCertWarnings }}
         - name: PROM_SCRAPE_INTERVAL
