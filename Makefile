@@ -203,6 +203,9 @@ IMAGE_PULL_POLICY ?= Always
 
 .PHONY: hack-deploy
 hack-deploy:
+ifndef BRIGADE_API_TOKEN
+	@echo "BRIGADE_API_TOKEN must be defined" && false
+endif
 	helm dep up charts/brigade-metrics && \
 	helm upgrade brigade-metrics charts/brigade-metrics \
 		--install \
@@ -217,7 +220,8 @@ hack-deploy:
 		--set grafana.image.tag=$(IMMUTABLE_DOCKER_TAG) \
 		--set grafana.image.pullPolicy=$(IMAGE_PULL_POLICY) \
 		--set grafana.auth.username=admin \
-		--set grafana.auth.password=admin
+		--set grafana.auth.password=admin \
+		--set exporter.brigade.apiToken=$(BRIGADE_API_TOKEN)
 
 .PHONY: hack
 hack: hack-push-images hack-deploy
