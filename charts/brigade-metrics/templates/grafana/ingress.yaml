@@ -1,9 +1,7 @@
 {{- if .Values.grafana.ingress.enabled }}
-{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion }}
-apiVersion: networking.k8s.io/v1
-{{- else }}
-apiVersion: networking.k8s.io/v1beta1
-{{- end }}
+{{- $networkingApiIsStable := eq (include "networking.apiVersion.isStable" .) "true" -}}
+{{- $networkingApiSupportsIngressClassName := eq (include "networking.apiVersion.supportIngressClassName" .) "true" -}}
+apiVersion: {{ template "networking.apiVersion" . }}
 kind: Ingress
 metadata:
   name: {{ include "brigade-metrics.grafana.fullname" . }}
@@ -15,11 +13,14 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
+  {{- if and (.Values.grafana.ingress.ingressClassName) ($networkingApiSupportsIngressClassName) }}
+  ingressClassName: {{ .Values.grafana.ingress.ingressClassName }}
+  {{- end }}
   rules:
   - host: {{ .Values.grafana.host }}
     http:
       paths:
-      {{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion }}
+      {{- if $networkingApiIsStable }}
       - pathType: ImplementationSpecific
         path: /
         backend:
