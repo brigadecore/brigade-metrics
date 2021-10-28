@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-	"time"
 
 	libHTTP "github.com/brigadecore/brigade-foundations/http"
 	"github.com/brigadecore/brigade-foundations/signals"
@@ -33,7 +32,7 @@ func main() {
 		}
 		newMetricsExporter(
 			sdk.NewAPIClient(address, token, &opts),
-			time.Duration(scrapeInterval),
+			scrapeInterval,
 		).start(ctx)
 	}
 
