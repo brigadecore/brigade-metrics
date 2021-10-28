@@ -28,17 +28,6 @@ ifneq ($(SKIP_DOCKER),true)
 		-w /workspaces/brigade-metrics \
 		$(GO_DEV_IMAGE)
 
-	KANIKO_IMAGE := brigadecore/kaniko:v0.2.0
-
-	KANIKO_DOCKER_CMD := docker run \
-		-it \
-		--rm \
-		-e SKIP_DOCKER=true \
-		-e DOCKER_PASSWORD=$${DOCKER_PASSWORD} \
-		-v $(PROJECT_ROOT):/workspaces/brigade-metrics \
-		-w /workspaces/brigade-metrics \
-		$(KANIKO_IMAGE)
-
 	HELM_IMAGE := brigadecore/helm-tools:v0.4.0
 
 	HELM_DOCKER_CMD := docker run \
@@ -136,12 +125,14 @@ build-images: build-exporter build-grafana
 
 .PHONY: build-%
 build-%:
-	$(KANIKO_DOCKER_CMD) kaniko \
+	docker buildx build \
+		-f $*/Dockerfile \
+		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
+		-t $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG) \
 		--build-arg VERSION=$(VERSION) \
 		--build-arg COMMIT=$(GIT_VERSION) \
-		--dockerfile /workspaces/brigade-metrics/$*/Dockerfile \
-		--context dir:///workspaces/brigade-metrics/ \
-		--no-push
+		--platform linux/amd64,linux/arm64 \
+		.
 
 ################################################################################
 # Publish                                                                      #
@@ -155,16 +146,16 @@ push-images: push-exporter push-grafana
 
 .PHONY: push-%
 push-%:
-	$(KANIKO_DOCKER_CMD) sh -c ' \
-		docker login $(DOCKER_REGISTRY) -u $(DOCKER_USERNAME) -p $${DOCKER_PASSWORD} && \
-		kaniko \
-			--build-arg VERSION="$(VERSION)" \
-			--build-arg COMMIT="$(GIT_VERSION)" \
-			--dockerfile /workspaces/brigade-metrics/$*/Dockerfile \
-			--context dir:///workspaces/brigade-metrics/ \
-			--destination $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
-			--destination $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG) \
-	'
+	docker login $(DOCKER_REGISTRY) -u $(DOCKER_USERNAME) -p $${DOCKER_PASSWORD}
+	docker buildx build \
+		-f $*/Dockerfile \
+		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
+		-t $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG) \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg COMMIT=$(GIT_VERSION) \
+		--platform linux/amd64,linux/arm64 \
+		--push \
+		.
 
 .PHONY: publish-chart
 publish-chart:
@@ -187,7 +178,8 @@ hack-build-images: hack-build-exporter hack-pull-grafana
 hack-build-%:
 	docker build \
 		-f $*/Dockerfile \
-		-t $(DOCKER_IMAGE_PREFIX)$*:$(VERSION) \
+		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
+		-t $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG) \
 		--build-arg VERSION='$(VERSION)' \
 		--build-arg COMMIT='$(GIT_VERSION)' \
 		.
@@ -198,6 +190,7 @@ hack-push-images: hack-push-exporter hack-push-grafana
 .PHONY: hack-push-%
 hack-push-%: hack-build-%
 	docker push $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)
+	docker push $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG)
 
 IMAGE_PULL_POLICY ?= Always
 
