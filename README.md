@@ -13,46 +13,48 @@ visualizations of those metrics available through a Grafana dashboard.
 
 <br clear="left"/>
 
-Brigade 2 itself is currently in an _beta_ state and remains under active
-development, as such, the same is true for this add-on component.
+## Installation
 
-## Getting Started
+Prerequisites:
 
-Follow these steps to get started.
+* A Kubernetes cluster:
+    * For which you have the `admin` cluster role
+    * That is already running Brigade 2
+    * Capable of provisioning a _public IP address_ for a service of type
+      `LoadBalancer`. (This means you won't have much luck running the gateway
+      locally in the likes of kind or minikube unless you're able and willing to
+      mess with port forwarding settings on your router, which we won't be
+      covering here.)
 
-### Prerequisites
+* `kubectl`, `helm` (commands below require Helm 3.7.0+), and `brig` (the
+  Brigade 2 CLI)
 
-Since Brigade Metrics aggregates and exposes metrics for a running Brigade 2
-installation, an operational Brigade 2 installation is a prerequisite.
+### 1. Create a Service Account
 
-Note that Brigade Metrics is only compatible with the _beta_ series of Brigade 2
-releases.
+__Note:__ To proceed beyond this point, you'll need to be logged into Brigade 2
+as the "root" user (not recommended) or (preferably) as a user with the `ADMIN`
+role. Further discussion of this is beyond the scope of this documentation.
+Please refer to Brigade's own documentation.
 
-If necessary, please refer to
-[Brigade 2's own getting started documentation](https://github.com/brigadecore/brigade/tree/v2)
-for guidance in fulfilling this dependency.
-
-Once Brigade 2 is operational, create a service account for use by Brigade
-Metrics:
+Using Brigade 2's `brig` CLI, create a service account:
 
 ```console
 $ brig service-account create \
     --id brigade-metrics \
-    --description "Used by Brigade Metrics"
+    --description brigade-metrics
 ```
 
-This command will display a token that Brigade Metrics can use for
-authenticating to the Brigade 2 API server. Take note of this value. It will
-be required in subsequent steps and cannot be retrieved later through any other
-means.
+Make note of the __token__ returned. This value will be used in another step.
+_It is your only opportunity to access this value, as Brigade does not save it._
 
-Now grant the service account global read permissions:
+Authorize this service account with read-only access to Brigade:
 
 ```console
-$ brig role grant READER --service-account brigade-metrics
+$ brig role grant READER \
+    --service-account brigade-metrics
 ```
 
-### Installing Brigade Metrics
+### 2. Installing Brigade Metrics
 
 For now, we're using the [GitHub Container Registry](https://ghcr.io) (which is
 an [OCI registry](https://helm.sh/docs/topics/registries/)) to host our Helm
@@ -95,6 +97,10 @@ minimum, you will need to make the following changes:
 * Specify a username and password for the metrics dashboard by setting values
   for `grafana.auth.username` and `grafana.auth.password`.
 
+* `grafana.service.type`: If you plan to enable ingress (advanced), you can
+  leave this as its default -- `ClusterIP`. If you do not plan to enable
+  ingress, you probably will want to change this value to `LoadBalancer`.
+
 Install Brigade Metrics, referencing your edited configuration:
 
 ```console
@@ -103,31 +109,37 @@ $ helm install brigade-metrics \
     --version v0.2.0 \
     --create-namespace \
     --namespace brigade-metrics \
-    --values ~/brigade-metrics-values.yaml
+    --values ~/brigade-metrics-values.yaml \
+    --wait \
+    --timeout 300s
 ```
 
-### Accessing the Dashboard
+### 3. (RECOMMENDED) Create a DNS Entry
 
-Use the following command to determine when the dashboard (Grafana) is ready:
+If you overrode defaults and set `grafana.service.type` to `LoadBalancer`, use
+this command to find the gateway's public IP address:
 
 ```console
-$ kubectl get deployment brigade-metrics-grafana --namespace brigade-metrics 
+$ kubectl get svc brigade-metrics-grafana \
+    --namespace brigade-metrics \
+    --output jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
 
-If you deployed Brigade Metrics on a public cloud _and_ kept the default service
-type of `LoadBalancer` for the dashboard, then use the following command to
-determine when your dashboard has been assigned a public IP:
+If you overrode defaults and enabled support for an ingress controller, you
+probably know what you're doing well enough to track down the correct IP without
+our help. 😉
 
-```console
-$ kubectl get service brigade-metrics-grafana --namespace brigade-metrics
-```
+With this public IP in hand, edit your name servers and add an `A` record
+pointing your domain to the public IP.
 
-The dashboard should be accessible at the public IP using HTTPS. If you used
-the default, auto-generated certificate, expect to receive a cert warning.
+### 4. Accessing the Dashboard
 
-If you deployed Brigade Metrics on a local cluster or changed the service type
-for the dashboard to something like `ClusterIP`, then use port forwarding to
-access the dashboard:
+If you overrode defaults and set `grafana.service.type` to `LoadBalancer`, then
+the dashboard should be accessible over HTTPS at the public IP address or DNS
+hostname.
+
+If you kept the default setting of `ClusterIP` for `grafana.service.type`, then
+use port forwarding to expose the dashboard on your local network interface:
 
 ```console
 $ kubectl port-forward \
@@ -136,8 +148,8 @@ $ kubectl port-forward \
     8443:443
 ```
 
-The dashboard should be accessible at `https://localhost:8443`. Expect to
-receive a cert warning.
+In this case, the dashboard should be accessible at `https://localhost:8443`.
+Expect to receive a cert warning.
 
 Log in using the username and password you selected in the previous section.
 
