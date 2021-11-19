@@ -76,7 +76,7 @@ the chart. Here we're storing a copy at `~/brigade-metrics-values.yaml`:
 
 ```console
 $ helm inspect values oci://ghcr.io/brigadecore/brigade-metrics \
-    --version v0.2.0 > ~/brigade-metrics-values.yaml
+    --version v0.3.0 > ~/brigade-metrics-values.yaml
 ```
 
 Edit the configuration (`~/brigade-metrics-values.yaml` in this example). At
@@ -106,7 +106,7 @@ Install Brigade Metrics, referencing your edited configuration:
 ```console
 $ helm install brigade-metrics \
     oci://ghcr.io/brigadecore/brigade-metrics \
-    --version v0.2.0 \
+    --version v0.3.0 \
     --create-namespace \
     --namespace brigade-metrics \
     --values ~/brigade-metrics-values.yaml \
