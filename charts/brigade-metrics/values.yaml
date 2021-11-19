@@ -43,7 +43,7 @@ exporter:
     type: ClusterIP
     ## Host port the service will be mapped to when service type is either
     ## NodePort or LoadBalancer. If not specified, Kubernetes chooses.
-    # nodePort: 31700
+    # nodePort:
 
 ## All settings for the Prometheus server
 prometheus:
@@ -90,7 +90,7 @@ grafana:
 
   ## Host should be set accurately for a variety of reasons including
   ## ingress resources and cert generation.
-  host: localhost:31700
+  host: localhost
 
   image:
     repository: brigadecore/brigade-metrics-grafana
