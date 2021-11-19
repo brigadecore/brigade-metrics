@@ -1,3 +1,44 @@
+{{- $tlsCert := "" }}
+{{- $tlsKey := "" }}
+{{- if .Values.grafana.tls.enabled }} 
+  {{- if .Values.grafana.tls.generateSelfSignedCert }}
+    {{- $data := (lookup "v1" "Secret" .Release.Namespace (printf "%s-cert" (include "brigade-metrics.grafana.fullname" . ))).data }}
+    {{- if $data }}
+      # Reuse the existing cert and key
+      {{- $tlsCert = index $data "tls.crt" }}
+      {{- $tlsKey = index $data "tls.key" }}
+    {{- else }}
+      # Generate a new cert and key
+      {{- $altName1 := include "brigade-metrics.grafana.fullname" . }}
+      {{- $altName2 := printf "%s.%s" (include "brigade-metrics.grafana.fullname" .) .Release.Namespace }}
+      {{- $altName3 := printf "%s.%s.svc" (include "brigade-metrics.grafana.fullname" .) .Release.Namespace }}
+      {{- $altName4 := printf "%s.%s.svc.cluster" (include "brigade-metrics.grafana.fullname" .) .Release.Namespace }}
+      {{- $altName5 := printf "%s.%s.svc.cluster.local" (include "brigade-metrics.grafana.fullname" .) .Release.Namespace }}
+      {{- $cert := genSelfSignedCert .Values.grafana.host nil (list .Values.grafana.host $altName1 $altName2 $altName3 $altName4 $altName5) 3650 }}
+      {{- $tlsCert = b64enc $cert.Cert }}
+      {{- $tlsKey = b64enc $cert.Key }}
+    {{- end }}
+  {{- else if .Values.grafana.tls.cert }}
+    # Use operator supplied cert and key
+    {{- $tlsCert = .Values.grafana.tls.cert }}
+    {{- $tlsKey = .Values.grafana.tls.key }}
+  {{- end }}
+{{- end }}
+---
+{{- if and .Values.grafana.tls.enabled (or .Values.grafana.tls.generateSelfSignedCert .Values.grafana.tls.cert) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "brigade-metrics.grafana.fullname" . }}-cert
+  labels:
+    {{- include "brigade-metrics.labels" . | nindent 4 }}
+    {{- include "brigade-metrics.grafana.labels" . | nindent 4 }}
+type: Opaque
+data:
+  tls.crt: {{ $tlsCert }}
+  tls.key: {{ $tlsKey }}
+{{- end }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -22,8 +63,9 @@ spec:
         checksum/configmap: {{ include (print $.Template.BasePath "/grafana/configmap.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/grafana/secret.yaml") . | sha256sum }}
         checksum/nginx-secret: {{ include (print $.Template.BasePath "/grafana/nginx-secret.yaml") . | sha256sum }}
-        {{- if .Values.grafana.tls.enabled }}
-        checksum/cert-secret: {{ include (print $.Template.BasePath "/grafana/cert-secret.yaml") . | sha256sum }}
+        {{- if and .Values.grafana.tls.enabled (or .Values.grafana.tls.generateSelfSignedCert .Values.grafana.tls.cert) }}
+        checksum/tls-cert: {{ sha256sum $tlsCert }}
+        checksum/tls-key: {{ sha256sum $tlsKey }}
         {{- end }}
     spec:
       containers:
