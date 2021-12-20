@@ -93,7 +93,7 @@ class PushImageJob extends BuildImageJob {
 
 // A map of all jobs. When a check_run:rerequested event wants to re-run a
 // single job, this allows us to easily find that job by name.
-const jobs: {[key: string]: (event: Event, version?: string) => Job } = {}
+const jobs: {[key: string]: (event: Event) => Job } = {}
 
 // Basic tests:
 
@@ -153,7 +153,6 @@ const publishChartJob = (event: Event, version: string) => {
     "HELM_PASSWORD": event.project.secrets.helmPassword
   })
 }
-jobs[publishChartJobName] = publishChartJob
 
 // Run the entire suite of tests WITHOUT publishing anything initially. If
 // EVERYTHING passes AND this was a push (merge, presumably) to the main branch,
@@ -171,13 +170,7 @@ async function runSuite(event: Event): Promise<void> {
     )
   ).run()
   if (event.worker?.git?.ref == "main") {
-    // Push "edge" images.
-    //
-    // npm packages MUST be semantically versioned, so we DON'T publish an
-    // edge brigadier package.
-    //
-    // To keep our github released page tidy, we're also not publishing "edge"
-    // CLI binaries.
+    // Push "edge" images
     await new ConcurrentGroup(
       pushExporterJob(event),
       pushGrafanaJob(event)
