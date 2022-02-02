@@ -125,6 +125,7 @@ build-images: build-exporter build-grafana
 
 .PHONY: build-%
 build-%:
+	docker login $(DOCKER_REGISTRY) -u $(DOCKER_USERNAME) -p $${DOCKER_PASSWORD}
 	docker buildx build \
 		-f $*/Dockerfile \
 		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
