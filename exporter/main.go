@@ -7,7 +7,7 @@ import (
 	libHTTP "github.com/brigadecore/brigade-foundations/http"
 	"github.com/brigadecore/brigade-foundations/signals"
 	"github.com/brigadecore/brigade-foundations/version"
-	"github.com/brigadecore/brigade/sdk/v2"
+	"github.com/brigadecore/brigade/sdk/v3"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
