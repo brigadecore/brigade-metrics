@@ -5,17 +5,15 @@ import (
 	"log"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v2"
-	"github.com/brigadecore/brigade/sdk/v2/authn"
-	"github.com/brigadecore/brigade/sdk/v2/core"
-	"github.com/brigadecore/brigade/sdk/v2/meta"
+	"github.com/brigadecore/brigade/sdk/v3"
+	"github.com/brigadecore/brigade/sdk/v3/meta"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 type metricsExporter struct {
-	coreClient           core.APIClient
-	authnClient          authn.APIClient
+	coreClient           sdk.CoreClient
+	authnClient          sdk.AuthnClient
 	scrapeInterval       time.Duration
 	projectsGauge        prometheus.Gauge
 	usersGauge           prometheus.Gauge
@@ -106,7 +104,7 @@ func (m *metricsExporter) recordProjectsCount() error {
 	// brigade_projects_total
 	projects, err := m.coreClient.Projects().List(
 		context.Background(),
-		&core.ProjectsSelector{},
+		&sdk.ProjectsSelector{},
 		&meta.ListOptions{},
 	)
 	if err != nil {
@@ -122,7 +120,7 @@ func (m *metricsExporter) recordUsersCount() error {
 	// brigade_users_total
 	users, err := m.authnClient.Users().List(
 		context.Background(),
-		&authn.UsersSelector{},
+		&sdk.UsersSelector{},
 		&meta.ListOptions{},
 	)
 	if err != nil {
@@ -138,7 +136,7 @@ func (m *metricsExporter) recordServiceAccountsCount() error {
 	// brigade_service_accounts_total
 	serviceAccounts, err := m.authnClient.ServiceAccounts().List(
 		context.Background(),
-		&authn.ServiceAccountsSelector{},
+		&sdk.ServiceAccountsSelector{},
 		&meta.ListOptions{},
 	)
 	if err != nil {
@@ -155,11 +153,11 @@ func (m *metricsExporter) recordServiceAccountsCount() error {
 
 func (m *metricsExporter) recordEventCountsByWorkersPhase() error {
 	// brigade_events_by_worker_phase
-	for _, phase := range core.WorkerPhasesAll() {
+	for _, phase := range sdk.WorkerPhasesAll() {
 		events, err := m.coreClient.Events().List(
 			context.Background(),
-			&core.EventsSelector{
-				WorkerPhases: []core.WorkerPhase{phase},
+			&sdk.EventsSelector{
+				WorkerPhases: []sdk.WorkerPhase{phase},
 			},
 			&meta.ListOptions{},
 		)
@@ -180,8 +178,8 @@ func (m *metricsExporter) recordPendingJobsCount() error {
 	for {
 		events, err := m.coreClient.Events().List(
 			context.Background(),
-			&core.EventsSelector{
-				WorkerPhases: []core.WorkerPhase{core.WorkerPhaseRunning},
+			&sdk.EventsSelector{
+				WorkerPhases: []sdk.WorkerPhase{sdk.WorkerPhaseRunning},
 			},
 			&meta.ListOptions{
 				Continue: continueValue,
@@ -192,7 +190,7 @@ func (m *metricsExporter) recordPendingJobsCount() error {
 		}
 		for _, event := range events.Items {
 			for _, job := range event.Worker.Jobs {
-				if job.Status.Phase == core.JobPhasePending {
+				if job.Status.Phase == sdk.JobPhasePending {
 					pendingJobs++
 				}
 			}

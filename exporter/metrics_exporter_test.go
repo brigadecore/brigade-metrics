@@ -6,12 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brigadecore/brigade/sdk/v2/authn"
-	"github.com/brigadecore/brigade/sdk/v2/core"
-	"github.com/brigadecore/brigade/sdk/v2/meta"
-	sdkTesting "github.com/brigadecore/brigade/sdk/v2/testing"
-	authnTesting "github.com/brigadecore/brigade/sdk/v2/testing/authn"
-	coreTesting "github.com/brigadecore/brigade/sdk/v2/testing/core"
+	"github.com/brigadecore/brigade/sdk/v3"
+	"github.com/brigadecore/brigade/sdk/v3/meta"
+	sdkTesting "github.com/brigadecore/brigade/sdk/v3/testing"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/assert"
@@ -21,8 +18,8 @@ import (
 func TestNewMetricsExporter(t *testing.T) {
 	exporter := newMetricsExporter(
 		&sdkTesting.MockAPIClient{
-			CoreClient:  &coreTesting.MockAPIClient{},
-			AuthnClient: &authnTesting.MockAPIClient{},
+			CoreClient:  &sdkTesting.MockCoreClient{},
+			AuthnClient: &sdkTesting.MockAuthnClient{},
 		},
 		5*time.Second,
 	)
@@ -45,14 +42,14 @@ func TestRecordProjectsCount(t *testing.T) {
 		{
 			name: "error listing projects",
 			exporter: &metricsExporter{
-				coreClient: &coreTesting.MockAPIClient{
-					ProjectsClient: &coreTesting.MockProjectsClient{
+				coreClient: &sdkTesting.MockCoreClient{
+					ProjectsClient: &sdkTesting.MockProjectsClient{
 						ListFn: func(
 							context.Context,
-							*core.ProjectsSelector,
+							*sdk.ProjectsSelector,
 							*meta.ListOptions,
-						) (core.ProjectList, error) {
-							return core.ProjectList{}, errors.New("something went wrong")
+						) (sdk.ProjectList, error) {
+							return sdk.ProjectList{}, errors.New("something went wrong")
 						},
 					},
 				},
@@ -67,18 +64,18 @@ func TestRecordProjectsCount(t *testing.T) {
 		{
 			name: "success",
 			exporter: &metricsExporter{
-				coreClient: &coreTesting.MockAPIClient{
-					ProjectsClient: &coreTesting.MockProjectsClient{
+				coreClient: &sdkTesting.MockCoreClient{
+					ProjectsClient: &sdkTesting.MockProjectsClient{
 						ListFn: func(
 							context.Context,
-							*core.ProjectsSelector,
+							*sdk.ProjectsSelector,
 							*meta.ListOptions,
-						) (core.ProjectList, error) {
-							return core.ProjectList{
+						) (sdk.ProjectList, error) {
+							return sdk.ProjectList{
 								ListMeta: meta.ListMeta{
 									RemainingItemCount: 1,
 								},
-								Items: []core.Project{
+								Items: []sdk.Project{
 									{}, // Return one project
 								},
 							}, nil
@@ -110,14 +107,14 @@ func TestRecordUsersCount(t *testing.T) {
 		{
 			name: "error listing users",
 			exporter: &metricsExporter{
-				authnClient: &authnTesting.MockAPIClient{
-					UsersClient: &authnTesting.MockUsersClient{
+				authnClient: &sdkTesting.MockAuthnClient{
+					UsersClient: &sdkTesting.MockUsersClient{
 						ListFn: func(
 							context.Context,
-							*authn.UsersSelector,
+							*sdk.UsersSelector,
 							*meta.ListOptions,
-						) (authn.UserList, error) {
-							return authn.UserList{}, errors.New("something went wrong")
+						) (sdk.UserList, error) {
+							return sdk.UserList{}, errors.New("something went wrong")
 						},
 					},
 				},
@@ -132,18 +129,18 @@ func TestRecordUsersCount(t *testing.T) {
 		{
 			name: "success",
 			exporter: &metricsExporter{
-				authnClient: &authnTesting.MockAPIClient{
-					UsersClient: &authnTesting.MockUsersClient{
+				authnClient: &sdkTesting.MockAuthnClient{
+					UsersClient: &sdkTesting.MockUsersClient{
 						ListFn: func(
 							context.Context,
-							*authn.UsersSelector,
+							*sdk.UsersSelector,
 							*meta.ListOptions,
-						) (authn.UserList, error) {
-							return authn.UserList{
+						) (sdk.UserList, error) {
+							return sdk.UserList{
 								ListMeta: meta.ListMeta{
 									RemainingItemCount: 1,
 								},
-								Items: []authn.User{
+								Items: []sdk.User{
 									{}, // Return one user
 								},
 							}, nil
@@ -175,14 +172,14 @@ func TestRecordServiceAccountsCount(t *testing.T) {
 		{
 			name: "error listing service accounts",
 			exporter: &metricsExporter{
-				authnClient: &authnTesting.MockAPIClient{
-					ServiceAccountsClient: &authnTesting.MockServiceAccountsClient{
+				authnClient: &sdkTesting.MockAuthnClient{
+					ServiceAccountsClient: &sdkTesting.MockServiceAccountsClient{
 						ListFn: func(
 							context.Context,
-							*authn.ServiceAccountsSelector,
+							*sdk.ServiceAccountsSelector,
 							*meta.ListOptions,
-						) (authn.ServiceAccountList, error) {
-							return authn.ServiceAccountList{},
+						) (sdk.ServiceAccountList, error) {
+							return sdk.ServiceAccountList{},
 								errors.New("something went wrong")
 						},
 					},
@@ -198,18 +195,18 @@ func TestRecordServiceAccountsCount(t *testing.T) {
 		{
 			name: "success",
 			exporter: &metricsExporter{
-				authnClient: &authnTesting.MockAPIClient{
-					ServiceAccountsClient: &authnTesting.MockServiceAccountsClient{
+				authnClient: &sdkTesting.MockAuthnClient{
+					ServiceAccountsClient: &sdkTesting.MockServiceAccountsClient{
 						ListFn: func(
 							context.Context,
-							*authn.ServiceAccountsSelector,
+							*sdk.ServiceAccountsSelector,
 							*meta.ListOptions,
-						) (authn.ServiceAccountList, error) {
-							return authn.ServiceAccountList{
+						) (sdk.ServiceAccountList, error) {
+							return sdk.ServiceAccountList{
 								ListMeta: meta.ListMeta{
 									RemainingItemCount: 1,
 								},
-								Items: []authn.ServiceAccount{
+								Items: []sdk.ServiceAccount{
 									{}, // Return 1 service account
 								},
 							}, nil
@@ -241,14 +238,14 @@ func TestRecordEventCountsByWorkersPhase(t *testing.T) {
 		{
 			name: "error listing events",
 			exporter: &metricsExporter{
-				coreClient: &coreTesting.MockAPIClient{
-					EventsClient: &coreTesting.MockEventsClient{
+				coreClient: &sdkTesting.MockCoreClient{
+					EventsClient: &sdkTesting.MockEventsClient{
 						ListFn: func(
 							context.Context,
-							*core.EventsSelector,
+							*sdk.EventsSelector,
 							*meta.ListOptions,
-						) (core.EventList, error) {
-							return core.EventList{}, errors.New("something went wrong")
+						) (sdk.EventList, error) {
+							return sdk.EventList{}, errors.New("something went wrong")
 						},
 					},
 				},
@@ -260,7 +257,7 @@ func TestRecordEventCountsByWorkersPhase(t *testing.T) {
 			assertions: func(exporter *metricsExporter, err error) {
 				require.Error(t, err)
 				require.Equal(t, "something went wrong", err.Error())
-				for _, phase := range core.WorkerPhasesAll() {
+				for _, phase := range sdk.WorkerPhasesAll() {
 					assert.Equal(
 						t,
 						0.0,
@@ -275,18 +272,18 @@ func TestRecordEventCountsByWorkersPhase(t *testing.T) {
 		{
 			name: "success",
 			exporter: &metricsExporter{
-				coreClient: &coreTesting.MockAPIClient{
-					EventsClient: &coreTesting.MockEventsClient{
+				coreClient: &sdkTesting.MockCoreClient{
+					EventsClient: &sdkTesting.MockEventsClient{
 						ListFn: func(
 							_ context.Context,
-							selector *core.EventsSelector,
+							selector *sdk.EventsSelector,
 							_ *meta.ListOptions,
-						) (core.EventList, error) {
-							return core.EventList{
-								Items: []core.Event{
+						) (sdk.EventList, error) {
+							return sdk.EventList{
+								Items: []sdk.Event{
 									{
-										Worker: &core.Worker{
-											Status: core.WorkerStatus{
+										Worker: &sdk.Worker{
+											Status: sdk.WorkerStatus{
 												Phase: selector.WorkerPhases[0],
 											},
 										},
@@ -303,7 +300,7 @@ func TestRecordEventCountsByWorkersPhase(t *testing.T) {
 			},
 			assertions: func(exporter *metricsExporter, err error) {
 				require.NoError(t, err)
-				for _, phase := range core.WorkerPhasesAll() {
+				for _, phase := range sdk.WorkerPhasesAll() {
 					assert.Equal(
 						t,
 						1.0,
@@ -333,14 +330,14 @@ func TestRecordPendingJobsCount(t *testing.T) {
 		{
 			name: "error listing events",
 			exporter: &metricsExporter{
-				coreClient: &coreTesting.MockAPIClient{
-					EventsClient: &coreTesting.MockEventsClient{
+				coreClient: &sdkTesting.MockCoreClient{
+					EventsClient: &sdkTesting.MockEventsClient{
 						ListFn: func(
 							context.Context,
-							*core.EventsSelector,
+							*sdk.EventsSelector,
 							*meta.ListOptions,
-						) (core.EventList, error) {
-							return core.EventList{}, errors.New("something went wrong")
+						) (sdk.EventList, error) {
+							return sdk.EventList{}, errors.New("something went wrong")
 						},
 					},
 				},
@@ -355,21 +352,21 @@ func TestRecordPendingJobsCount(t *testing.T) {
 		{
 			name: "success",
 			exporter: &metricsExporter{
-				coreClient: &coreTesting.MockAPIClient{
-					EventsClient: &coreTesting.MockEventsClient{
+				coreClient: &sdkTesting.MockCoreClient{
+					EventsClient: &sdkTesting.MockEventsClient{
 						ListFn: func(
 							context.Context,
-							*core.EventsSelector,
+							*sdk.EventsSelector,
 							*meta.ListOptions,
-						) (core.EventList, error) {
-							return core.EventList{
-								Items: []core.Event{
+						) (sdk.EventList, error) {
+							return sdk.EventList{
+								Items: []sdk.Event{
 									{
-										Worker: &core.Worker{
-											Jobs: []core.Job{
+										Worker: &sdk.Worker{
+											Jobs: []sdk.Job{
 												{ // 1 pending job
-													Status: &core.JobStatus{
-														Phase: core.JobPhasePending,
+													Status: &sdk.JobStatus{
+														Phase: sdk.JobPhasePending,
 													},
 												},
 											},
