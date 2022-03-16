@@ -18,6 +18,8 @@ RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build \
 
 EXPOSE 8080
 
-FROM scratch
+FROM gcr.io/distroless/static:nonroot as final
+
 COPY --from=builder /src/bin/ /brigade-metrics/bin/
+
 ENTRYPOINT ["/brigade-metrics/bin/exporter"]
