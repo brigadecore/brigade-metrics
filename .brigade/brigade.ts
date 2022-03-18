@@ -2,7 +2,7 @@ import { events, Event, Job, ConcurrentGroup, SerialGroup, Container } from "@br
 
 const goImg = "brigadecore/go-tools:v0.7.0"
 const dindImg = "docker:20.10.9-dind"
-const dockerClientImg = "brigadecore/docker-tools:v0.1.0"
+const dockerClientImg = "brigadecore/docker-tools:v0.2.0"
 const helmImg = "brigadecore/helm-tools:v0.4.0"
 const localPath = "/workspaces/brigade-metrics"
 
@@ -128,6 +128,21 @@ class BuildImageJob extends JobWithSource {
   }
 }
 
+class ScanJob extends MakeTargetJob {
+  constructor(image: string, event: Event) {
+    const env = {}
+    const secrets = event.project.secrets
+    if (secrets.unstableImageRegistry) {
+      env["DOCKER_REGISTRY"] = secrets.unstableImageRegistry
+    }
+    if (secrets.unstableImageRegistryOrg) {
+      env["DOCKER_ORG"] = secrets.unstableImageRegistryOrg
+    }
+    super(`scan-${image}`, [`scan-${image}`], dockerClientImg, event, env)
+    this.fallible = true
+  }
+}
+
 // A map of all jobs. When a ci:job_requested event wants to re-run a single
 // job, this allows us to easily find that job by name.
 const jobs: {[key: string]: (event: Event) => Job } = {}
@@ -168,6 +183,18 @@ const buildGrafanaJob = (event: Event, version?: string) => {
 }
 jobs[buildGrafanaJobName] = buildGrafanaJob
 
+const scanExporterJobName = "scan-exporter"
+const scanExporterJob = (event: Event) => {
+  return new ScanJob("exporter", event)
+}
+jobs[scanExporterJobName] = scanExporterJob
+
+const scanGrafanaJobName = "scan-grafana"
+const scanGrafanaJob = (event: Event) => {
+  return new ScanJob("grafana", event)
+}
+jobs[scanGrafanaJobName] = scanGrafanaJob
+
 const publishChartJobName = "publish-chart"
 const publishChartJob = (event: Event, version: string) => {
   return new MakeTargetJob(publishChartJobName, ["publish-chart"], helmImg, event, {
@@ -187,8 +214,8 @@ events.on("brigade.sh/github", "ci:pipeline_requested", async event => {
       lintChartJob(event)
     ),
     new ConcurrentGroup( // Build everything
-      buildExporterJob(event),
-      buildGrafanaJob(event)
+      new SerialGroup(buildExporterJob(event), scanExporterJob(event)),
+      new SerialGroup(buildGrafanaJob(event), scanGrafanaJob(event)),
     )
   ).run()
 })
