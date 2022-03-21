@@ -2,7 +2,7 @@ import { events, Event, Job, ConcurrentGroup, SerialGroup, Container } from "@br
 
 const goImg = "brigadecore/go-tools:v0.7.0"
 const dindImg = "docker:20.10.9-dind"
-const dockerClientImg = "brigadecore/docker-tools:v0.2.0"
+const dockerClientImg = "brigadecore/docker-tools:v0.3.0"
 const helmImg = "brigadecore/helm-tools:v0.4.0"
 const localPath = "/workspaces/brigade-metrics"
 
@@ -143,9 +143,28 @@ class ScanJob extends MakeTargetJob {
   }
 }
 
+class PublishSBOMJob extends MakeTargetJob {
+  constructor(image: string, event: Event, version: string) {
+    const secrets = event.project.secrets
+    const env = {
+      "GITHUB_ORG": secrets.githubOrg,
+      "GITHUB_REPO": secrets.githubRepo,
+      "GITHUB_TOKEN": secrets.githubToken,
+      "VERSION": version
+    }
+    if (secrets.stableImageRegistry) {
+      env["DOCKER_REGISTRY"] = secrets.stableImageRegistry
+    }
+    if (secrets.stableImageRegistryOrg) {
+      env["DOCKER_ORG"] = secrets.stableImageRegistryOrg
+    }
+    super(`publish-sbom-${image}`, [`publish-sbom-${image}`], dockerClientImg, event, env)
+  }
+}
+
 // A map of all jobs. When a ci:job_requested event wants to re-run a single
 // job, this allows us to easily find that job by name.
-const jobs: {[key: string]: (event: Event) => Job } = {}
+const jobs: {[key: string]: (event: Event, version?: string) => Job } = {}
 
 // Basic tests:
 
@@ -195,6 +214,18 @@ const scanGrafanaJob = (event: Event) => {
 }
 jobs[scanGrafanaJobName] = scanGrafanaJob
 
+const publishExporterSBOMJobName = "publish-exporter-sbom"
+const publishExporterSBOMJob = (event: Event, version: string) => {
+  return new PublishSBOMJob("receiver", event, version)
+}
+jobs[publishExporterSBOMJobName] = publishExporterSBOMJob
+
+const publishGrafanaSBOMJobName = "publish-grafana-sbom"
+const publishGrafanaSBOMJob = (event: Event, version: string) => {
+  return new PublishSBOMJob("monitor", event, version)
+}
+jobs[publishGrafanaSBOMJobName] = publishGrafanaSBOMJob
+
 const publishChartJobName = "publish-chart"
 const publishChartJob = (event: Event, version: string) => {
   return new MakeTargetJob(publishChartJobName, ["publish-chart"], helmImg, event, {
@@ -237,7 +268,11 @@ events.on("brigade.sh/github", "cd:pipeline_requested", async event => {
       buildExporterJob(event, version),
       buildGrafanaJob(event, version)
     ),
-    publishChartJob(event, version)
+    publishChartJob(event, version),
+    new ConcurrentGroup(
+      publishExporterSBOMJob(event, version),
+      publishGrafanaSBOMJob(event, version)
+    )
   ).run()
 })
 
