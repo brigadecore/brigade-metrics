@@ -1,6 +1,6 @@
 module github.com/brigadecore/brigade-metrics
 
-go 1.17
+go 1.18
 
 require (
 	github.com/brigadecore/brigade-foundations v0.1.0
