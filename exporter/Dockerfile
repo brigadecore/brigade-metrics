@@ -7,9 +7,10 @@ ARG TARGETARCH
 ENV CGO_ENABLED=0
 
 WORKDIR /src
-COPY exporter/ exporter/
 COPY go.mod go.mod
 COPY go.sum go.sum
+RUN go mod download
+COPY exporter/ exporter/
 
 RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build \
   -o bin/exporter \
