@@ -1,6 +1,6 @@
 SHELL ?= /bin/bash
 
-.DEFAULT_GOAL := build
+.DEFAULT_GOAL := push-images
 
 ################################################################################
 # Version details                                                              #
@@ -114,27 +114,6 @@ upload-code-coverage:
 	$(GO_DOCKER_CMD) codecov
 
 ################################################################################
-# Build                                                                        #
-################################################################################
-
-.PHONY: build
-build: build-images
-
-.PHONY: build-images
-build-images: build-exporter build-grafana
-
-.PHONY: build-%
-build-%:
-	docker buildx build \
-		-f $*/Dockerfile \
-		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
-		-t $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG) \
-		--build-arg VERSION=$(VERSION) \
-		--build-arg COMMIT=$(GIT_VERSION) \
-		--platform linux/amd64,linux/arm64 \
-		.
-
-################################################################################
 # Image security                                                               #
 ################################################################################
 
@@ -198,64 +177,3 @@ publish-chart:
 		helm package . --version $(VERSION) --app-version $(VERSION) && \
 		helm push brigade-metrics-$(VERSION).tgz oci://$(HELM_REGISTRY)$(HELM_ORG) \
 	'
-
-################################################################################
-# Targets to facilitate hacking on Brigade Prometheus.                         #
-################################################################################
-
-.PHONY: hack-build-images
-hack-build-images: hack-build-exporter hack-pull-grafana
-
-.PHONY: hack-build-%
-hack-build-%:
-	docker build \
-		-f $*/Dockerfile \
-		-t $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
-		-t $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG) \
-		--build-arg VERSION='$(VERSION)' \
-		--build-arg COMMIT='$(GIT_VERSION)' \
-		.
-
-.PHONY: hack-push-images
-hack-push-images: hack-push-exporter hack-push-grafana
-
-.PHONY: hack-push-%
-hack-push-%: hack-build-%
-	docker push $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)
-	docker push $(DOCKER_IMAGE_PREFIX)$*:$(MUTABLE_DOCKER_TAG)
-
-IMAGE_PULL_POLICY ?= Always
-
-.PHONY: hack-deploy
-hack-deploy:
-ifndef BRIGADE_API_TOKEN
-	@echo "BRIGADE_API_TOKEN must be defined" && false
-endif
-	helm dep up charts/brigade-metrics && \
-	helm upgrade brigade-metrics charts/brigade-metrics \
-		--install \
-		--create-namespace \
-		--namespace brigade-metrics \
-		--wait \
-		--timeout 30s \
-		--set exporter.image.repository=$(DOCKER_IMAGE_PREFIX)exporter \
-		--set exporter.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set exporter.image.pullPolicy=$(IMAGE_PULL_POLICY) \
-		--set grafana.image.repository=$(DOCKER_IMAGE_PREFIX)grafana \
-		--set grafana.image.tag=$(IMMUTABLE_DOCKER_TAG) \
-		--set grafana.image.pullPolicy=$(IMAGE_PULL_POLICY) \
-		--set grafana.auth.username=admin \
-		--set grafana.auth.password=admin \
-		--set exporter.brigade.apiToken=$(BRIGADE_API_TOKEN)
-
-.PHONY: hack
-hack: hack-push-images hack-deploy
-
-# Convenience targets for loading images into a KinD cluster
-.PHONY: hack-load-images
-hack-load-images: load-exporter load-grafana
-
-load-%:
-	@echo "Loading $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)"
-	@kind load docker-image $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG) \
-			|| echo >&2 "kind not installed or error loading image: $(DOCKER_IMAGE_PREFIX)$*:$(IMMUTABLE_DOCKER_TAG)"
