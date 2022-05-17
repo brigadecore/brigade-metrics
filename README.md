@@ -38,7 +38,7 @@ Please refer to Brigade's own documentation.
 
 Using Brigade 2's `brig` CLI, create a service account:
 
-```console
+```shell
 $ brig service-account create \
     --id brigade-metrics \
     --description brigade-metrics
@@ -49,7 +49,7 @@ _It is your only opportunity to access this value, as Brigade does not save it._
 
 Authorize this service account with read-only access to Brigade:
 
-```console
+```shell
 $ brig role grant READER \
     --service-account brigade-metrics
 ```
@@ -67,14 +67,14 @@ First, be sure you are using
 [Helm 3.7.0](https://github.com/helm/helm/releases/tag/v3.7.0) or greater and
 enable experimental OCI support:
 
-```console
+```shell
 $ export HELM_EXPERIMENTAL_OCI=1
 ```
 
 Use the following command to extract the full set of configuration options from
 the chart. Here we're storing a copy at `~/brigade-metrics-values.yaml`:
 
-```console
+```shell
 $ helm inspect values oci://ghcr.io/brigadecore/brigade-metrics \
     --version v0.4.1 > ~/brigade-metrics-values.yaml
 ```
@@ -103,7 +103,7 @@ minimum, you will need to make the following changes:
 
 Install Brigade Metrics, referencing your edited configuration:
 
-```console
+```shell
 $ helm install brigade-metrics \
     oci://ghcr.io/brigadecore/brigade-metrics \
     --version v0.4.1 \
@@ -119,7 +119,7 @@ $ helm install brigade-metrics \
 If you overrode defaults and set `grafana.service.type` to `LoadBalancer`, use
 this command to find the gateway's public IP address:
 
-```console
+```shell
 $ kubectl get svc brigade-metrics-grafana \
     --namespace brigade-metrics \
     --output jsonpath='{.status.loadBalancer.ingress[0].ip}'
@@ -141,7 +141,7 @@ hostname.
 If you kept the default setting of `ClusterIP` for `grafana.service.type`, then
 use port forwarding to expose the dashboard on your local network interface:
 
-```console
+```shell
 $ kubectl port-forward \
     service/brigade-metrics-grafana \
     --namespace brigade-metrics \
